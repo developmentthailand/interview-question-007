@@ -1,0 +1,50 @@
+<div class="inventory-shell">
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Example Inventory home"><span class="brand-mark">E</span><span>EXAMPLE <b>INVENTORY</b></span></a>
+    <span class="workspace-chip"><i></i> Product workspace</span>
+  </header>
+
+  <main class="content-wrap">
+    <section class="page-heading">
+      <div><p class="eyebrow">CATALOG MANAGEMENT <span>•</span> QUESTION 07</p><h1>QR product codes</h1><p>Manage unique product identifiers and scan ready QR labels.</p></div>
+      <div class="count-card"><span class="count-icon">▦</span><div><strong>{{ products().length }}</strong><small>products</small></div></div>
+    </section>
+
+    @if (errorMessage(); as message) { <div class="error-banner" role="alert">{{ message }}</div> }
+
+    <section class="add-card" aria-labelledby="add-title">
+      <div class="section-heading"><span class="section-icon">＋</span><div><h2 id="add-title">Add a product</h2><p>Enter 30 uppercase letters or numbers. Hyphens are added automatically.</p></div></div>
+      <form [formGroup]="form" (ngSubmit)="addProduct()" novalidate>
+        <label for="code">Product code <span>*</span></label>
+        <div class="input-row"><div class="code-input-wrap"><span aria-hidden="true">#</span><input id="code" type="text" formControlName="code" maxlength="35" autocomplete="off" autocapitalize="characters" placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX-XXXXX" (input)="formatCode($event)" aria-describedby="code-hint" /></div><button class="add-button" type="submit" [disabled]="saving() || form.invalid">{{ saving() ? 'Adding…' : 'Add product' }} <span aria-hidden="true">＋</span></button></div>
+        <div class="input-foot"><small id="code-hint">6 groups · 5 characters per group</small>@if (form.controls.code.touched && form.controls.code.invalid) { <small class="field-error">Use 30 uppercase letters or digits in the required six-group format.</small> }</div>
+      </form>
+    </section>
+
+    <section class="list-card" aria-labelledby="list-title">
+      <div class="list-heading"><div><h2 id="list-title">Product catalog</h2><p>Unique saved codes with instant QR preview</p></div><span class="table-count">{{ products().length }} ITEMS</span></div>
+      @if (loading()) {
+        <div class="empty-state"><span class="spinner" aria-hidden="true"></span><p>Loading products…</p></div>
+      } @else if (products().length === 0) {
+        <div class="empty-state"><span class="empty-icon" aria-hidden="true">▦</span><strong>No products yet</strong><p>Add a product code above to create the first catalog entry.</p></div>
+      } @else {
+        <div class="table-scroll"><table><thead><tr><th>PRODUCT CODE</th><th>QR CODE</th><th>CREATED</th><th><span class="visually-hidden">Actions</span></th></tr></thead><tbody>
+          @for (product of products(); track product.id) {
+            <tr [attr.data-product-id]="product.id"><td><span class="code-badge">{{ product.code }}</span></td><td><button class="qr-button" type="button" (click)="openQr(product)"><span aria-hidden="true">▦</span> QR</button></td><td class="date-cell">{{ createdLabel(product) }}</td><td class="action-cell"><button class="delete-button" type="button" [disabled]="deletingId() === product.id" (click)="deleteProduct(product)" [attr.aria-label]="'Delete ' + product.code">{{ deletingId() === product.id ? 'Deleting…' : 'Delete' }}</button></td></tr>
+          }
+        </tbody></table></div>
+      }
+    </section>
+    <footer class="page-footer"><span>EXAMPLE INVENTORY</span> · Interview Question 07</footer>
+  </main>
+
+  <div class="modal-backdrop" [hidden]="!selectedProduct()" (click)="closeQr()">
+    <section class="qr-modal" role="dialog" aria-modal="true" aria-labelledby="qr-title" [hidden]="!selectedProduct()" (click)="$event.stopPropagation()">
+      <button class="modal-close" type="button" aria-label="Close QR code" (click)="closeQr()">×</button>
+      <div class="modal-icon" aria-hidden="true">▦</div><p class="eyebrow">PRODUCT IDENTIFIER</p><h2 id="qr-title">QR Code</h2>
+      <p class="modal-code">{{ selectedProduct()?.code }}</p>
+      <div class="qr-frame">@if (qrLoading()) { <span class="spinner" aria-label="Generating QR code"></span> } @else if (qrError()) { <p class="qr-error" role="alert">QR code could not be generated.</p> } @else if (qrImageUrl(); as imageUrl) { <img class="qr-image" [src]="imageUrl" [alt]="'QR code for ' + (selectedProduct()?.code ?? '')" /> }</div>
+      <button class="modal-done" type="button" (click)="closeQr()">Close</button>
+    </section>
+  </div>
+</div>
